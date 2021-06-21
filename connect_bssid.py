@@ -93,9 +93,9 @@ def test_connection(ssid, bssid, interface):
         }
     prepare_connection(ssid, bssid, interface, AuthMethod)
 
-def subprocess_calls(args):
+def subprocess_calls(args, check=True):
     sp_output = sp.run(args, shell=True)
-    assert(sp_output.returncode == 0)
+    if check: assert(sp_output.returncode == 0)
         
 
 def return_and_log(connected, json_info):
@@ -154,14 +154,14 @@ def prepare_connection(ssid, bssid, interface, auth):
         return return_and_log(connected, json_info)
     
     try:
-        subprocess_calls(dhclient_release)
-        subprocess_calls('ip route del default')
+        subprocess_calls(dhclient_release, False)
+        subprocess_calls('ip route del default,', False)
 
         interface_path = '/var/run/wpa_supplicant/wlan0'
         if os.path.exists(interface_path):
-            subprocess_calls('rm ' + interface_path)
+            subprocess_calls('rm ' + interface_path, False)
 
-        subprocess_calls('killall wpa_supplicant')
+        subprocess_calls('killall wpa_supplicant', False)
         subprocess_calls(bring_down)
         subprocess_calls(flush_config)
         subprocess_calls(bring_up)
