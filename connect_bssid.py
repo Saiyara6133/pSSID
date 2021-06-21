@@ -94,7 +94,7 @@ def test_connection(ssid, bssid, interface):
     prepare_connection(ssid, bssid, interface, AuthMethod)
 
 def subprocess_calls(args, check=True):
-    sp_output = sp.run(args, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    sp_output = sp.run(args, shell=True, stdout=sp.DEVNULL, stderr=sp.DEVNULL)
     if check: assert(sp_output.returncode == 0)
         
 
