@@ -352,7 +352,7 @@ def main(TASK, o=False, s=False, q=False):
 
 
 
-    if(o):
+    if True:
         #stdout print
         print ("JSON Result:")
         print (json_dump(result_data))
