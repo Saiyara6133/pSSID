@@ -448,8 +448,8 @@ def loop_forever():
 
 
 
-with daemon.DaemonContext(stdout=sys.stdout, stderr=sys.stderr, working_directory=os.getcwd()):
-    if DEBUG:
-        debug(parsed_file, schedule)
+# with daemon.DaemonContext(stdout=sys.stdout, stderr=sys.stderr, working_directory=os.getcwd()):
+if DEBUG:
+    debug(parsed_file, schedule)
 
-    loop_forever()
+loop_forever()
