@@ -436,6 +436,7 @@ def loop_forever():
             x.terminate()
         print("Main    : all done")
 
+        exit(0)
         # pid_child = os.fork()
         # if pid_child == 0:
 
