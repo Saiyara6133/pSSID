@@ -218,7 +218,7 @@ def transform(main_obj, bssid):
             i["transform"]["script"] = append + script_str #tested and works with syslog
         elif i["archiver"] == "http":
             i["transform"]["script"] = "\"redirect_url=www.perfsonar.net&buttonClicked=4\""
-            i["transform"]["output-raw"] = "true"
+            i["transform"]["output-raw"] = True
         
         new_list.append(i)
 
@@ -356,6 +356,8 @@ def run_child(bssid_list, main_obj, ssid, interface):
             # TODO: check if mguest here
             if bssid['ssid'] == 'MGuest':
                 task_temp = {
+                    "schema": 1,
+                    "schedule": {},
                     "archives": [
                     ],
                     "test": {
@@ -367,26 +369,30 @@ def run_child(bssid_list, main_obj, ssid, interface):
                         "type": "http"
                     }
                 }
-                task_obj = main_obj
+                task_obj = main_obj.copy()
                 task_obj['name'] = 'http_test'
                 task_obj['TASK'] = task_temp
                 task_obj['throughput'] = False
                 result = run_pscheduler(task_obj, connection_info["new_ip"], bssid)
-                url = result['content']
-                url = re.search('switch_url=(.+?)&')
-                http_archive = {
-                    "archiver": "http", 
-                    "data" : {
-                        "schema": 2,
-                        "op": "post",
-                        "_url": url,
-                        "_headers": {
-                            "Content-Type": "application/x-www-form-urlencoded"
+                try:
+                    url = result['content']
+                    url = re.search('switch_url=(.+?)&', url)                
+                    task_obj['TASK']['test']['spec']['keep-content'] = 1
+                    http_archive = {
+                        "archiver": "http", 
+                        "data" : {
+                            "schema": 2,
+                            "op": "post",
+                            "_url": url.group(1),
+                            "_headers": {
+                                "Content-Type": "application/x-www-form-urlencoded"
+                            }
                         }
                     }
-                }
-                task_obj['TASK']["archives"].append(http_archive)
-                run_pscheduler(task_obj, connection_info["new_ip"], bssid)
+                    task_obj['TASK']["archives"].append(http_archive)
+                    run_pscheduler(task_obj, connection_info["new_ip"], bssid)
+                except:
+                    pass
             
 
             run_pscheduler(main_obj, connection_info["new_ip"], bssid)
