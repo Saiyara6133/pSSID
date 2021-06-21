@@ -371,6 +371,7 @@ def main(TASK, o=False, s=False, q=False):
         channel.close()
         connection.close()
         
+    return result_data
 
 # -----------------------------------------------------------------------------
 
