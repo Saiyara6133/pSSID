@@ -94,7 +94,7 @@ def test_connection(ssid, bssid, interface):
     prepare_connection(ssid, bssid, interface, AuthMethod)
 
 def subprocess_calls(args, check=True):
-    sp_output = sp.run(args, shell=True)
+    sp_output = sp.run(args, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if check: assert(sp_output.returncode == 0)
         
 
@@ -171,7 +171,6 @@ def prepare_connection(ssid, bssid, interface, auth):
         wpa_file.close()
         wpa_file = open(wpa_supp_path, "w")
         for line in wpa_lines:
-            print(line)
             if line.startswith('    ssid'):
                 wpa_file.write(ssid_line)
             elif line.startswith('    bssid'):
