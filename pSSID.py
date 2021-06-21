@@ -17,6 +17,7 @@ import pika
 import syslog
 import traceback
 import multiprocessing
+import re
 
 parser = argparse.ArgumentParser(description='pSSID')
 parser.add_argument('file', action='store',
@@ -212,10 +213,13 @@ def transform(main_obj, bssid):
 
         i["transform"] = {}
         if i["archiver"] == "rabbitmq":
-            i["transform"]["script"] = '.pSSID = '  + json.dumps(transform)
-        else:    
+            i["transform"]["script"] = ".pSSID = "  + json.dumps(transform)
+        elif i["archiver"] == "syslog":    
             i["transform"]["script"] = append + script_str #tested and works with syslog
-
+        elif i["archiver"] == "http":
+            i["transform"]["script"] = "\"redirect_url=www.perfsonar.net&buttonClicked=4\""
+            i["transform"]["output-raw"] = "true"
+        
         new_list.append(i)
 
     return new_list
@@ -312,23 +316,27 @@ def run_scan(next_task, main_obj):
 
 
 def run_pscheduler(main_obj, dest, bssid):
+    message = None
     if main_obj["throughput"] and "dest" not in main_obj["TASK"]["test"]["spec"].keys():
         main_obj["TASK"]["test"]["spec"]["dest"] = dest
 
     main_obj["TASK"]["archives"] = transform(main_obj, bssid)
     pSched_task = main_obj["TASK"]
     try:
-        rest_api.main(pSched_task)
+        message = rest_api.main(pSched_task)
     except:
         print(time.ctime(time.time()))
         print("ERROR in running test with pscheduler", main_obj["name"], bssid["ssid"])
         print(traceback.print_exc())
+    
+    return message
 
 
 def run_child(bssid_list, main_obj, ssid, interface):
     for item in bssid_list[main_obj["BSSIDs"]]:
         bssid = item["BSSID"]
         if single_BSSID_qualify(bssid, ssid):
+            # TODO: check if MSetup here
             if DEBUG: print("Connect")
             # Connect to bssid
             connection_info = connect_bssid.prepare_connection(bssid['ssid'], bssid['address'], interface[main_obj["BSSIDs"]], ssid["AuthMethod"])
@@ -339,12 +347,46 @@ def run_child(bssid_list, main_obj, ssid, interface):
 
             rabbitmqQueue(json.dumps(connection_info), "pSSID", "pSSID")
 
-            #if connection fails, it won't run any test
-            # import pdb; pdb.set_trace()
-            if connection_info["connected"]:
-                run_pscheduler(main_obj, connection_info["new_ip"], bssid)
-            elif DEBUG: 
-                print("Connection Failed")
+            # if connection fails, it won't run any test
+            if not connection_info["connected"]:
+                if DEBUG: 
+                    print("Connection Failed")
+                continue
+                
+            # TODO: check if mguest here
+            if bssid['ssid'] == 'MGuest':
+                task_obj = {
+                    "archives": [
+                    ],
+                    "test": {
+                        "spec": {
+                            "keep-content": 0,
+                            "schema": 2,
+                            "url": "www.perfsonar.net"
+                        },
+                        "type": "http"
+                    }
+                }
+                result = run_pscheduler(task_obj, connection_info["new_ip"], bssid)
+                url = result['content']
+                url = re.search('switch_url=(.+?)&')
+                http_archive = {
+                    "archiver": "http", 
+                    "data" : {
+                        "schema": 2,
+                        "op": "post",
+                        "_url": url,
+                        "_headers": {
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        }
+                    }
+                }
+                task_obj["archives"].append(http_archive)
+                run_pscheduler(task_obj, connection_info["new_ip"], bssid)
+            
+
+            run_pscheduler(main_obj, connection_info["new_ip"], bssid)
+            
 
 
 def loop_forever():
@@ -426,17 +468,20 @@ def loop_forever():
             print_task_info(main_obj, next_task)
             continue
 
-        print("Main    : before creating thread")
         x = multiprocessing.Process(target=run_child, args=(bssid_list, main_obj, ssid, interface,))
-        print("Main    : before running thread")
         x.start()
-        print("Main    : wait for the thread to finish")
         x.join(computed_TTL)
         if x.is_alive():
             x.terminate()
-        print("Main    : all done")
 
-        exit(0)
+        next_task = reschedule(main_obj, cron, ssid)
+        main_obj, cron, ssid, scan = retrieve(next_task)
+        print_task_info(main_obj, next_task)
+
+        if schedule.empty():
+            print("ERROR: this should never reach")
+
+        
         # pid_child = os.fork()
         # if pid_child == 0:
 
@@ -448,8 +493,8 @@ def loop_forever():
 
 
 
-# with daemon.DaemonContext(stdout=sys.stdout, stderr=sys.stderr, working_directory=os.getcwd()):
-if DEBUG:
-    debug(parsed_file, schedule)
+with daemon.DaemonContext(stdout=sys.stdout, stderr=sys.stderr, working_directory=os.getcwd()):
+    if DEBUG:
+        debug(parsed_file, schedule)
 
-loop_forever()
+    loop_forever()
