@@ -329,6 +329,7 @@ def run_child(bssid_list, main_obj, ssid, interface):
     for item in bssid_list[main_obj["BSSIDs"]]:
         bssid = item["BSSID"]
         if single_BSSID_qualify(bssid, ssid):
+            # TODO: check if MSetup here
             if DEBUG: print("Connect")
             # Connect to bssid
             connection_info = connect_bssid.prepare_connection(bssid['ssid'], bssid['address'], interface[main_obj["BSSIDs"]], ssid["AuthMethod"])
@@ -339,6 +340,7 @@ def run_child(bssid_list, main_obj, ssid, interface):
 
             rabbitmqQueue(json.dumps(connection_info), "pSSID", "pSSID")
 
+            # TODO: check if mguest here
             #if connection fails, it won't run any test
             # import pdb; pdb.set_trace()
             if connection_info["connected"]:
@@ -426,17 +428,21 @@ def loop_forever():
             print_task_info(main_obj, next_task)
             continue
 
-        print("Main    : before creating thread")
         x = multiprocessing.Process(target=run_child, args=(bssid_list, main_obj, ssid, interface,))
-        print("Main    : before running thread")
         x.start()
-        print("Main    : wait for the thread to finish")
         x.join(computed_TTL)
         if x.is_alive():
             x.terminate()
         print("Main    : all done")
 
-        exit(0)
+        next_task = reschedule(main_obj, cron, ssid)
+        main_obj, cron, ssid, scan = retrieve(next_task)
+        print_task_info(main_obj, next_task)
+
+        if schedule.empty():
+            print("ERROR: this should never reach")
+
+        
         # pid_child = os.fork()
         # if pid_child == 0:
 
@@ -448,8 +454,8 @@ def loop_forever():
 
 
 
-# with daemon.DaemonContext(stdout=sys.stdout, stderr=sys.stderr, working_directory=os.getcwd()):
-if DEBUG:
-    debug(parsed_file, schedule)
+with daemon.DaemonContext(stdout=sys.stdout, stderr=sys.stderr, working_directory=os.getcwd()):
+    if DEBUG:
+        debug(parsed_file, schedule)
 
-loop_forever()
+    loop_forever()
