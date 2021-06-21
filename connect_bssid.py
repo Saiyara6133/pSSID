@@ -168,7 +168,7 @@ def prepare_connection(ssid, bssid, interface, auth):
 
         wpa_file = open(wpa_supp_path, "w+")
         wpa_lines = wpa_file.readlines()
-        for line in wpa_file:
+        for line in wpa_lines:
             print(line)
             if 'ssid=' in line:
                 wpa_file.write(ssid_line)
