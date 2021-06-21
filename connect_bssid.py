@@ -155,7 +155,7 @@ def prepare_connection(ssid, bssid, interface, auth):
     
     try:
         subprocess_calls(dhclient_release, False)
-        subprocess_calls('ip route del default,', False)
+        subprocess_calls('ip route del default', False)
 
         interface_path = '/var/run/wpa_supplicant/wlan0'
         if os.path.exists(interface_path):
@@ -167,6 +167,7 @@ def prepare_connection(ssid, bssid, interface, auth):
         subprocess_calls(bring_up)
 
         wpa_file = open(wpa_supp_path, "w+")
+        wpa_lines = wpa_file.readlines()
         for line in wpa_file:
             print(line)
             if 'ssid=' in line:
