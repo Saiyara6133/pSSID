@@ -172,9 +172,9 @@ def prepare_connection(ssid, bssid, interface, auth):
         wpa_file = open(wpa_supp_path, "w")
         for line in wpa_lines:
             print(line)
-            if line.startswith('ssid'):
+            if line.startswith('    ssid'):
                 wpa_file.write(ssid_line)
-            elif line.startswith('bssid'):
+            elif line.startswith('    bssid'):
                 wpa_file.write(bssid_line)
             else: wpa_file.write(line)
         wpa_file.close()
