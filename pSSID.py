@@ -18,6 +18,7 @@ import syslog
 import traceback
 import multiprocessing
 import re
+import subprocess as sp
 
 parser = argparse.ArgumentParser(description='pSSID')
 parser.add_argument('file', action='store',
@@ -331,71 +332,88 @@ def run_pscheduler(main_obj, dest, bssid):
     
     return message
 
+def change_macaddress(mac):
+    args = 'macchanger -m ' + mac + ' wlan0'
+    sp_output = sp.run(args, shell=True, stdout=sp.DEVNULL, stderr=sp.DEVNULL)
+
 
 def run_child(bssid_list, main_obj, ssid, interface):
+    captive_portal_passed = False
+    change_mac = False
     for item in bssid_list[main_obj["BSSIDs"]]:
         bssid = item["BSSID"]
         if single_BSSID_qualify(bssid, ssid):
             # TODO: check if MSetup here
-            if DEBUG: print("Connect")
-            # Connect to bssid
-            connection_info = connect_bssid.prepare_connection(bssid['ssid'], bssid['address'], interface[main_obj["BSSIDs"]], ssid["AuthMethod"])
-            
-            connection_info = json.loads(connection_info)
-            connection_info["bssid_info"] = bssid
-            connection_info["meta"] = main_obj["meta"]
+            run_loop = 1
+            if ssid['AuthMethod']['type'] == 'macaddress':
+                run_loop = ssid['AuthMethod']['num_addresses']
+                change_mac = True
 
-            rabbitmqQueue(json.dumps(connection_info), "pSSID", "pSSID")
-
-            # if connection fails, it won't run any test
-            if not connection_info["connected"]:
-                if DEBUG: 
-                    print("Connection Failed")
-                continue
+            for i in range(run_loop):
+                if change_mac:
+                    change_macaddress(ssid['AuthMethod']['macaddresses'][i])
                 
-            # TODO: check if mguest here
-            if bssid['ssid'] == 'MGuest':
-                task_temp = {
-                    "schema": 1,
-                    "schedule": {},
-                    "archives": [
-                    ],
-                    "test": {
-                        "spec": {
-                            "keep-content": 0,
-                            "schema": 2,
-                            "url": "www.perfsonar.net"
-                        },
-                        "type": "http"
-                    }
-                }
-                task_obj = main_obj.copy()
-                task_obj['name'] = 'http_test'
-                task_obj['TASK'] = task_temp
-                task_obj['throughput'] = False
-                result = run_pscheduler(task_obj, connection_info["new_ip"], bssid)
-                try:
-                    url = result['content']
-                    url = re.search('switch_url=(.+?)&', url)                
-                    task_obj['TASK']['test']['spec']['keep-content'] = 1
-                    http_archive = {
-                        "archiver": "http", 
-                        "data" : {
-                            "schema": 2,
-                            "op": "post",
-                            "_url": url.group(1),
-                            "_headers": {
-                                "Content-Type": "application/x-www-form-urlencoded"
-                            }
+                if DEBUG: print("Connect")
+                # Connect to bssid
+                connection_info = connect_bssid.prepare_connection(bssid['ssid'], bssid['address'], interface[main_obj["BSSIDs"]], ssid["AuthMethod"])
+                
+                connection_info = json.loads(connection_info)
+                connection_info["bssid_info"] = bssid
+                connection_info["meta"] = main_obj["meta"]
+
+                rabbitmqQueue(json.dumps(connection_info), "pSSID", "pSSID")
+
+                # if connection fails, it won't run any test
+                if not connection_info["connected"]:
+                    if DEBUG: 
+                        print("Connection Failed")
+                    continue
+                    
+                # TODO: check if mguest here
+                if bssid['ssid'] == 'MGuest' and not captive_portal_passed:
+                    task_temp = {
+                        "schema": 1,
+                        "schedule": {},
+                        "archives": [
+                        ],
+                        "test": {
+                            "spec": {
+                                "keep-content": 0,
+                                "schema": 2,
+                                "url": "www.perfsonar.net"
+                            },
+                            "type": "http"
                         }
                     }
-                    task_obj['TASK']["archives"].append(http_archive)
-                    run_pscheduler(task_obj, connection_info["new_ip"], bssid)
-                except:
-                    pass
-            
+                    task_obj = main_obj.copy()
+                    task_obj['name'] = 'http_test'
+                    task_obj['TASK'] = task_temp
+                    task_obj['throughput'] = False
+                    
+                    try:
+                        result = run_pscheduler(task_obj, connection_info["new_ip"], bssid)
+                        url = result['content']
+                        url = re.search('switch_url=(.+?)&', url)                
+                        task_obj['TASK']['test']['spec']['keep-content'] = 1
+                        http_archive = {
+                            "archiver": "http", 
+                            "data" : {
+                                "schema": 2,
+                                "op": "post",
+                                "_url": url.group(1),
+                                "_headers": {
+                                    "Content-Type": "application/x-www-form-urlencoded"
+                                }
+                            }
+                        }
+                        task_obj['TASK']["archives"].append(http_archive)
+                        run_pscheduler(task_obj, connection_info["new_ip"], bssid)
+                        captive_portal_passed = True
+                    except:
+                        captive_portal_passed = True
+                
 
-            run_pscheduler(main_obj, connection_info["new_ip"], bssid)
+                run_pscheduler(main_obj, connection_info["new_ip"], bssid)
             
 
 
