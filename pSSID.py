@@ -367,6 +367,7 @@ def run_child(bssid_list, main_obj, ssid, interface):
                         "type": "http"
                     }
                 }
+                task_obj = {}
                 task_obj['TASK'] = task_temp
                 task_obj['throughput'] = False
                 result = run_pscheduler(task_obj, connection_info["new_ip"], bssid)
