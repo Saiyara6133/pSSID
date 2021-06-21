@@ -355,7 +355,7 @@ def run_child(bssid_list, main_obj, ssid, interface):
                 
             # TODO: check if mguest here
             if bssid['ssid'] == 'MGuest':
-                task_obj = {
+                task_temp = {
                     "archives": [
                     ],
                     "test": {
@@ -367,6 +367,8 @@ def run_child(bssid_list, main_obj, ssid, interface):
                         "type": "http"
                     }
                 }
+                task_obj['TASK'] = task_temp
+                task_obj['throughput'] = False
                 result = run_pscheduler(task_obj, connection_info["new_ip"], bssid)
                 url = result['content']
                 url = re.search('switch_url=(.+?)&')
@@ -381,7 +383,7 @@ def run_child(bssid_list, main_obj, ssid, interface):
                         }
                     }
                 }
-                task_obj["archives"].append(http_archive)
+                task_obj['TASK']["archives"].append(http_archive)
                 run_pscheduler(task_obj, connection_info["new_ip"], bssid)
             
 
