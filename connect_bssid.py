@@ -149,6 +149,7 @@ def prepare_connection(ssid, bssid, interface, auth):
     dhclient = ('dhclient ' + interface)
     dhclient_release = ('dhclient -r ' + interface)
 
+    import pdb; pdb.set_trace()
     if not os.path.exists(wpa_supp_path):
         return return_and_log(connected, json_info)
     

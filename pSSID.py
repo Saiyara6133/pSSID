@@ -365,7 +365,7 @@ def loop_forever():
     main_obj, cron, ssid, scan = retrieve(next_task)
     print_task_info(main_obj, next_task)
     
-    old_sig = signal.signal(signal.SIGCHLD, sigh)
+    # old_sig = signal.signal(signal.SIGCHLD, sigh)
     while True:
 
         if scan:
@@ -388,27 +388,27 @@ def loop_forever():
 
 
 
-        if(pid_child != 0):
-            if not child_exited:
-                if DEBUG: print ("***kill child***", pid_child)
-                os.kill(pid_child, signal.SIGKILL)
-                try:
-                    os.wait()
-                except:
-                    print(time.ctime(time.time()))
-                    print("CHILD DEAD")
-            else:
-                child_exited = False
+        # if(pid_child != 0):
+        #     if not child_exited:
+        #         if DEBUG: print ("***kill child***", pid_child)
+        #         os.kill(pid_child, signal.SIGKILL)
+        #         try:
+        #             os.wait()
+        #         except:
+        #             print(time.ctime(time.time()))
+        #             print("CHILD DEAD")
+        #     else:
+        #         child_exited = False
 
-            pid_child = 0
-            next_task = reschedule(main_obj, cron, ssid)
-            main_obj, cron, ssid, scan = retrieve(next_task)
-            print_task_info(main_obj, next_task)
+        #     pid_child = 0
+        #     next_task = reschedule(main_obj, cron, ssid)
+        #     main_obj, cron, ssid, scan = retrieve(next_task)
+        #     print_task_info(main_obj, next_task)
 
-            if schedule.empty():
-                print("ERROR: this should never reach")
+        #     if schedule.empty():
+        #         print("ERROR: this should never reach")
 
-            continue
+        #     continue
 
 
         task_ttl = main_obj["ttl"] + connect_ttl
