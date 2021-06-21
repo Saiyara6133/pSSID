@@ -481,7 +481,7 @@ def loop_forever():
         if schedule.empty():
             print("ERROR: this should never reach")
 
-        
+        exit(0)
         # pid_child = os.fork()
         # if pid_child == 0:
 
@@ -493,8 +493,8 @@ def loop_forever():
 
 
 
-with daemon.DaemonContext(stdout=sys.stdout, stderr=sys.stderr, working_directory=os.getcwd()):
-    if DEBUG:
-        debug(parsed_file, schedule)
+# with daemon.DaemonContext(stdout=sys.stdout, stderr=sys.stderr, working_directory=os.getcwd()):
+if DEBUG:
+    debug(parsed_file, schedule)
 
-    loop_forever()
+loop_forever()
