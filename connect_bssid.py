@@ -135,8 +135,8 @@ def prepare_connection(ssid, bssid, interface, auth):
     wpa_supp_path = '/etc/wpa_supplicant/wpa_supplicant_' + ssid + '.conf'
 
     # Format SSID and BSSID for wpa supplicant
-    ssid_line = '    ssid="' + ssid + '"'
-    bssid_line = '    bssid=' + bssid
+    ssid_line = '    ssid="' + ssid + '"\n'
+    bssid_line = '    bssid=' + bssid + '\n'
 
     # Add interface to ip commands
     bring_down = ('ip link set ' + interface + ' down')
@@ -166,9 +166,10 @@ def prepare_connection(ssid, bssid, interface, auth):
         # subprocess_calls(flush_config)
         # subprocess_calls(bring_up)
 
-        wpa_file = open(wpa_supp_path, "r+")
+        wpa_file = open(wpa_supp_path, "r")
         wpa_lines = wpa_file.readlines()
-
+        wpa_file.close()
+        wpa_file = open(wpa_supp_path, "w")
         for line in wpa_lines:
             print(line)
             if 'ssid=' in line:
