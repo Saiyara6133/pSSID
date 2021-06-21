@@ -163,15 +163,18 @@ class Parse:
     def create_pSSID_task(self, given_task, given_test):
         """
         running this function validates SSIDs and schedule
-        TASK: contain formatted tasks for valid for pscheduler
+        TASK: contains valid pScheduler tasks
         Sched: list of cron schedule info
         SSIDs: list of SSIDs associated with task
         """
         taskobj = {}
         taskobj["throughput"] = False
         taskobj["name"] = given_test
+        taskobj["amqp_url"] = self.amqp_url
         taskobj["TASK"] = self.create_pScheduler_task(given_task, given_test)
         taskobj["schedule"] = self.schedule_for_task(given_task)
+
+        # includes SSID profiles object infomartion
         taskobj["SSIDs"] = self.SSIDs_for_profiles(self.tasks[given_task]["profiles"])
         taskobj["interface"] = self.all_scans[self.tasks[given_task]["BSSIDs"]]
         taskobj["priority"] = self.tasks[given_task]["priority"]
