@@ -425,7 +425,7 @@ def loop_forever():
             print_task_info(main_obj, next_task)
             continue
 
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         print("Main    : before creating thread")
         x = multiprocessing.Process(target=run_child, args=(bssid_list, main_obj, ssid, interface,))
         print("Main    : before running thread")
