@@ -10,6 +10,7 @@ def scan_bssids(self):
     """
     Parses the scan objects defined in config file
     """
+
     all_scans = {}
 
     for i in self.BSSID_scans:
@@ -48,14 +49,18 @@ def scan_bssids(self):
 
 class Parse:
     """
-    -takes one argument: json configuration file
-    -Parses the individual dictionaries defined in config file  
-    -creates and returns single task formatted for pScheduler given task info
-    -creates and returns single task formatted for pSSID given task info  (with cron scheduler and SSID list)
-    -creates and returns list of all tasks from config file formatted for pSSID 
+    Takes one argument: json configuration file
+    - Parses the individual dictionaries defined in config file  
+    - creates and returns single task formatted for pScheduler given task info
+    - creates and returns single task formatted for pSSID given task info  (with cron scheduler and SSID list)
+    - creates and returns list of all tasks from config file formatted for pSSID 
     """
 
     def __init__(self, config_file):
+        """
+        Initializes dictionary object for each field in config file
+        """
+
         # psjson makes sure that it is a valid json file
         json_obj =  psjson.json_load(source=config_file)
 
@@ -83,7 +88,7 @@ class Parse:
     
     def schedule_for_task(self,given_task):
         """
-        returns cron schedule list for a given task
+        Returns list of cron object for a given task
         """
         try:
             cron_list = []
@@ -134,14 +139,14 @@ class Parse:
             "schedule": {}
         }
 
-        #validate tests
+        # validate tests
         try:
             taskobj["test"]= self.tests[given_test]
         except:
             print("ERROR in retrieving \"test\" from", given_task, given_test)
             print(traceback.print_exc()) 
 
-        #validate archives
+        # validate archives
         try:
             taskobj["archives"] = []
             archives_list = self.tasks[given_task]["archives"]

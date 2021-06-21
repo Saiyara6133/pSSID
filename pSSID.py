@@ -16,7 +16,7 @@ import warnings
 import pika
 import syslog
 import traceback
-
+import threading
 
 parser = argparse.ArgumentParser(description='pSSID')
 parser.add_argument('file', action='store',
@@ -229,6 +229,7 @@ def debug(parsed_file, schedule):
 
 
 def rabbitmqQueue(message, queue_name ="", routing_key = "", exchange_name = ""):
+    # TODO: extract url
     url = "amqp://elastic:elastic@pssid-elk.miserver.it.umich.edu"
     try:
         connection = pika.BlockingConnection(pika.URLParameters(url))
@@ -359,6 +360,8 @@ def loop_forever():
 
     next_task = schedule.get_queue[0]
     schedule.pop(next_task)
+
+    # main_obj is a complete pSSID task created by parse_config.py
     main_obj, cron, ssid, scan = retrieve(next_task)
     print_task_info(main_obj, next_task)
     
@@ -373,10 +376,10 @@ def loop_forever():
             child_exited = False
             continue
 
-        if pid_child != 0:
-            waittime = time.time() + computed_TTL
-            while not child_exited and time.time() < waittime:
-                continue
+        # if pid_child != 0:
+        #     waittime = time.time() + computed_TTL
+        #     while not child_exited and time.time() < waittime:
+        #         continue
 
         elif next_task.time > time.time():
             sleep_time = next_task.time - time.time()
@@ -411,7 +414,7 @@ def loop_forever():
         task_ttl = main_obj["ttl"] + connect_ttl
         num_bssids = BSSID_qualify(scanned_table, ssid)
 
-        #Compute task time to live
+        # Compute task time to live
         if num_bssids:
             computed_TTL = num_bssids * task_ttl
             if DEBUG: print("TTL", computed_TTL, num_bssids)
@@ -422,15 +425,23 @@ def loop_forever():
             print_task_info(main_obj, next_task)
             continue
 
+        import pdb; pdb.set_trace()
+        print("Main    : before creating thread")
+        x = threading.Thread(target=run_child, args=(bssid_list, main_obj, ssid, interface,))
+        print("Main    : before running thread")
+        x.start()
+        print("Main    : wait for the thread to finish")
+        x.join(computed_TTL)
+        print("Main    : all done")
 
-        pid_child = os.fork()
-        if pid_child == 0:
+        # pid_child = os.fork()
+        # if pid_child == 0:
 
-            signal.signal(signal.SIGCHLD, old_sig)
-            if DEBUG: print("CHILD")
-            run_child(bssid_list, main_obj, ssid, interface)
+        #     signal.signal(signal.SIGCHLD, old_sig)
+        #     if DEBUG: print("CHILD")
+        #     run_child(bssid_list, main_obj, ssid, interface)
 
-            exit(0)
+        #     exit(0)
 
 
 
