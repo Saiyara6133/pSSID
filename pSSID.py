@@ -340,7 +340,7 @@ def run_child(bssid_list, main_obj, ssid, interface):
             rabbitmqQueue(json.dumps(connection_info), "pSSID", "pSSID")
 
             #if connection fails, it won't run any test
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
             if connection_info["connected"]:
                 run_pscheduler(main_obj, connection_info["new_ip"], bssid)
             elif DEBUG: 
