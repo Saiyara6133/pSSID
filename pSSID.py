@@ -334,6 +334,8 @@ def run_pscheduler(main_obj, dest, bssid):
 
 def change_macaddress(mac):
     args = 'macchanger -m ' + mac + ' wlan0'
+    if mac == 'permanent':
+        args = 'macchanger -p wlan0'    
     sp_output = sp.run(args, shell=True, stdout=sp.DEVNULL, stderr=sp.DEVNULL)
 
 
@@ -414,6 +416,10 @@ def run_child(bssid_list, main_obj, ssid, interface):
                 
 
                 run_pscheduler(main_obj, connection_info["new_ip"], bssid)
+
+    if change_mac:
+        # change to permanent mac
+        change_macaddress('permanent')
             
 
 
