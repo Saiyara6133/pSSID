@@ -166,14 +166,16 @@ def prepare_connection(ssid, bssid, interface, auth):
         # subprocess_calls(flush_config)
         # subprocess_calls(bring_up)
 
-        wpa_file = open(wpa_supp_path, "w+")
+        wpa_file = open(wpa_supp_path, "r+")
         wpa_lines = wpa_file.readlines()
+
         for line in wpa_lines:
             print(line)
             if 'ssid=' in line:
                 wpa_file.write(ssid_line)
-            if 'bssid=' in line:
+            elif 'bssid=' in line:
                 wpa_file.write(bssid_line)
+            else: wpa_file.write(line)
         wpa_file.close()
 
         subprocess_calls(run_wpa_supplicant)
