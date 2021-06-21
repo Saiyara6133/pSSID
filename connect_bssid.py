@@ -178,7 +178,8 @@ def prepare_connection(ssid, bssid, interface, auth):
                 wpa_file.write(bssid_line)
             else: wpa_file.write(line)
         wpa_file.close()
-
+        
+        import pdb; pdb.set_trace()
         subprocess_calls(run_wpa_supplicant)
         subprocess_calls(dhclient)
     except:
