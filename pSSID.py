@@ -16,7 +16,7 @@ import warnings
 import pika
 import syslog
 import traceback
-import threading
+import multiprocessing
 
 parser = argparse.ArgumentParser(description='pSSID')
 parser.add_argument('file', action='store',
@@ -427,11 +427,13 @@ def loop_forever():
 
         import pdb; pdb.set_trace()
         print("Main    : before creating thread")
-        x = threading.Thread(target=run_child, args=(bssid_list, main_obj, ssid, interface,))
+        x = multiprocessing.Process(target=run_child, args=(bssid_list, main_obj, ssid, interface,))
         print("Main    : before running thread")
         x.start()
         print("Main    : wait for the thread to finish")
         x.join(computed_TTL)
+        if x.is_alive():
+            x.terminate()
         print("Main    : all done")
 
         # pid_child = os.fork()
